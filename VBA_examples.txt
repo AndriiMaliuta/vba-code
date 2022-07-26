@@ -1,0 +1,493 @@
+VBA - nc_kmr
+===================
+LISTS
+===================
+
+Option 1:
+
+For Each para In ActiveDocument.ListParagraphs
+    If para.Range.ListFormat.ListType <> wdListBullet Then
+        ListGalleries(wdOutlineNumberGallery).ListTemplates(1).Name = ""
+        para.Range.ListFormat.ApplyListTemplateWithLevel ListTemplate:= _
+            ListGalleries(wdOutlineNumberGallery).ListTemplates(1), _
+            ContinuePreviousList:=True, ApplyTo:=wdListApplyToWholeList
+    
+    End If
+
+Option 2:
+
+For Each para In ActiveDocument.ListParagraphs
+    If para.Range.ListFormat.ListType <> wdListBullet Then
+    para.Range.ListFormat.ApplyListTemplate _
+        ListTemplate:=ListGalleries(wdOutlineNumberGallery) _
+        .ListTemplates(2)
+    End If
+
+============================================
+TMUS
+============================================
+----------------
+Option 1:
+----------------
+
+ActiveDocument.Paragraphs(1).Alignment = msoAlignCenters
+
+----------------
+Option 2:
+----------------
+
+Dim myRange As Range
+
+Set myRange = ActiveDocument.Content
+
+myRange.Find.Execute FindText:="Level of Effort No", Forward:=True
+
+If myRange.Find.Found = True Then myRange.Paragraphs.Alignment = msoAlignCenters
+
+
+========================================
+Find and change the words style
+========================================
+
+Sub HeadingsChange()
+
+Dim rng As Range
+Dim mykeywords
+mykeywords = Array("Current Version", "Prior Versions")
+
+Dim nkey As Integer
+
+For Each rng In ActiveDocument.Words
+        Selection.Collapse
+        rng.Select
+            
+            If mykeywords(nkey) = LCase(Trim(rng.Text)) Then
+                Selection.Style = ActiveDocument.Styles("Heading 2")
+            End If
+
+    Next rng
+
+End Sub
+
+_______________________________________________________________
+
+Sub ChangeHeading1()
+
+Dim mykeywords
+mykeywords = Array("Version History", "Glossary of Terms", "Contents")
+Dim myword As Integer
+
+For myword = LBound(mykeywords) To UBound(mykeywords)
+
+    Selection.Find.ClearFormatting
+    Selection.Find.Replacement.ClearFormatting
+    Selection.Find.Replacement.Style = ActiveDocument.Styles("HEADING TO SET")
+    
+    With Selection.Find
+        .Text = mykeywords(myword)
+        .Style = "HHEADING TO FIND"
+        .Replacement.Text = mykeywords(myword)
+        .Forward = True
+        .Wrap = wdFindContinue
+        .Format = True
+        .MatchCase = False
+        .MatchWholeWord = True
+        .MatchWildcards = False
+        .MatchSoundsLike = False
+        .MatchAllWordForms = False
+    End With
+    
+    Selection.Find.Execute Replace:=wdReplaceAll
+
+Next
+
+End Sub
+
+---------------
+
+Sub ReplacePrefixes()
+
+Dim mykeywords
+mykeywords = Array("\[FDS.CRM.*\]")
+Dim myword As Integer
+
+For myword = LBound(mykeywords) To UBound(mykeywords)
+
+    Selection.Find.ClearFormatting
+    Selection.Find.Replacement.ClearFormatting
+    'Selection.Find.Replacement.Style = ActiveDocument.Styles("HEADING TO SET")
+    
+    With Selection.Find
+        .Text = mykeywords(myword)
+        '.Style = "Heading 1"
+        .Replacement.Text = ""
+        .Forward = True
+        .Wrap = wdFindContinue
+        .Format = True
+        .MatchCase = False
+        .MatchWholeWord = True
+        .MatchWildcards = True
+        .MatchSoundsLike = False
+        .MatchAllWordForms = False
+    End With
+    
+    Selection.Find.Execute Replace:=wdReplaceAll
+
+Next
+
+End Sub
+_______________________________________________________________
+NEC
+_______________________________________________________________
+
+---------------------------------------
+Delete empty paragraphs before tables
+---------------------------------------
+
+Option Explicit
+
+' Andrii Maliuta
+' July 24, 2018
+' Macro to remove empty paragraphs before tables
+
+Sub RemoveBlanks()
+
+Dim MyRange As Range, myTable As Table
+
+For Each myTable In ActiveDocument.Tables
+
+If myTable.Style <> "NC-2" Then
+
+    Set MyRange = myTable.Range
+    MyRange.Collapse wdCollapseStart
+    MyRange.Move wdParagraph, -1
+     'if paragraph before table empty, delete it
+     
+    If MyRange.Paragraphs(1).Range.Text = vbCr Then
+        MyRange.Paragraphs(1).Range.Delete
+    End If
+
+End If
+
+Next myTable
+
+End Sub
+
+----------------------------------------
+Delete empty paragraphs after Heading 1
+----------------------------------------
+
+Option Explicit
+
+' July 24, 2018
+' Macro to remove empty paragraphs before tables
+
+Sub RemoveBlanks()
+
+Dim MyRange As Range, myTable As Table
+
+For Each myTable In ActiveDocument.Tables
+
+If myTable.Style = "NC-2" Then
+
+    Set MyRange = myTable.Range
+    MyRange.Collapse wdCollapseStart
+    MyRange.Move wdParagraph, -1
+     'if paragraph before table empty, delete it
+     
+    If MyRange.Paragraphs(1).Range.Text = vbCr Then
+        MyRange.Paragraphs(1).Range.Delete
+    End If
+
+Next myTable
+
+End Sub
+
++-------------+
+  ADET
++-------------+
+
+=====================
+Simple FindReplace
+=====================
+
+
+Sub FindReplacePrefix()
+
+Set myRange = ActiveDocument.Content
+
+myRange.Find.Execute FindText:="Data Migration. Phase 1. AAAA", _
+    ReplaceWith:="", Replace:=wdReplaceAll
+
+End Sub
+
+=============================
+FindReplace of diff. numbers
+=============================
+
+Sub ScratchMacro()
+
+Dim oRng As Word.Range
+
+  Set oRng = ActiveDocument.Range
+  
+  With oRng.Find
+    .Text = "Data Migration. Phase [0-9]. "
+    .Replacement.Text = ""
+    .MatchWildcards = True
+    .Execute Replace:=wdReplaceAll
+    
+  End With
+  
+End Sub
+
+-------------------------------------------------
+FindReplace ALL (+ Title Page and Header/Footer)
+-------------------------------------------------
+
+Sub FindReplacePrefix()
+
+    Dim rngStory As Word.Range
+    
+    Dim lngJunk As Long
+    
+    lngJunk = ActiveDocument.Sections(1).Headers(1).Range.StoryType
+    
+    For Each rngStory In ActiveDocument.StoryRanges
+    
+        Do
+    
+          With rngStory.Find
+    
+            .Text = "TEXT_TO_FIND"
+            .Replacement.Text = "NEW_TEXT_TO_ADD"
+            .Wrap = wdFindContinue
+            .Execute Replace:=wdReplaceAll
+    
+          End With
+    
+          Set rngStory = rngStory.NextStoryRange
+    
+        Loop Until rngStory Is Nothing
+    
+    Next
+  
+End Sub
+
+----------------------------------
+TOC update
+----------------------------------
+ActiveDocument.TablesOfContents(1).Update
+
+============================================
+Insert TOC
+============================================
+Sub InsertTOC()
+    Selection.Find.ClearFormatting
+    With Selection.Find
+        .Text = "INSERT TOC HERE"
+        .Replacement.Text = ""
+        .Forward = True
+        .Wrap = wdFindContinue
+        .Format = False
+        .MatchCase = False
+        .MatchWholeWord = False
+        .MatchWildcards = False
+        .MatchSoundsLike = False
+        .MatchAllWordForms = False
+    End With
+    Selection.Find.Execute
+    With ActiveDocument
+        If .TablesOfContents.Count = 0 Then
+            .TablesOfContents.Add Range:=Selection.Range, RightAlignPageNumbers:= _
+                True, UseHeadingStyles:=True, UpperHeadingLevel:=1, _
+                LowerHeadingLevel:=3, IncludePageNumbers:=True, AddedStyles:="", _
+                UseHyperlinks:=True, HidePageNumbersInWeb:=True, UseOutlineLevels:= _
+                True
+            .TablesOfContents(1).TabLeader = wdTabLeaderDots
+            .TablesOfContents.Format = wdIndexIndent
+        End If
+    End With
+End Sub
+
+===================================
+REMOVE BOOKMARKS
+===================================
+
+Sub removebookmarks()
+
+    Dim bkm As Bookmark
+    
+    For Each bkm In ActiveDocument.Bookmarks
+    
+        bkm.Delete
+    
+    Next bkm
+
+End Sub
+
+=============================================
+Center pictures
+=============================================
+Sub centerPictures()
+
+  Dim shpIn As InlineShape, shp As Shape
+
+  For Each shpIn In ActiveDocument.InlineShapes
+    shpIn.Select
+    Selection.ParagraphFormat.Alignment = wdAlignParagraphCenter
+  Next shpIn
+  For Each shp In ActiveDocument.Shapes
+    shp.Select
+    Selection.ParagraphFormat.Alignment = wdAlignParagraphCenter
+  Next shp
+End Sub
+
+=============================================
+Images resize
+=============================================
+Sub resize()
+
+Dim i As Long
+
+With ActiveDocument
+    For i = 1 To .InlineShapes.Count
+        With .InlineShapes(i)
+            If .Width > 100 Then
+                .ScaleHeight = 40
+                .ScaleWidth = 40
+            End If
+        End With
+    Next i
+End With
+
+End Sub
+
+==============================================
+Run action for all files in a folder
+==============================================
+
+Sub RunMacroOnAllFilesInFolder()
+
+    Dim flpath As String, fl As String
+    flpath = InputBox("Please enter the path to the folder you want to run the macro on.")
+    
+    If flpath = "" Then Exit Sub
+     
+    If Right(flpath, 1) <> Application.PathSeparator Then flpath = flpath & Application.PathSeparator
+    fl = Dir(flpath & "*.docx")
+    
+    Application.ScreenUpdating = False
+    
+    Do Until fl = ""
+        MyMacro flpath, fl
+        fl = Dir
+    Loop
+    
+    End Sub
+     
+    Sub MyMacro(flpath As String, fl As String)
+    
+    Dim doc As Document
+    
+    Set doc = Documents.Open(flpath & fl)
+    
+        ' Action for each document
+        Set myRange = doc.Content
+
+        myRange.Find.Execute FindText:="[", _
+            ReplaceWith:="LEFT_SQUARE", Replace:=wdReplaceAll
+    
+    doc.Save
+    
+    doc.Close SaveChanges:=False
+    
+End Sub
+
+=========================
+Demote Headings
+=========================
+
+Sub DemoteAllHeadings()
+    Dim p As Paragraph
+    Dim sParStyle As String
+    Dim iHeadLevel As Integer
+
+    For Each p In ActiveDocument.Paragraphs
+        sParStyle = p.Style
+        
+        If Left(sParStyle, 7) = "Heading" And Left(p.Range.Text, 8) = "FDS.CJM." Then
+            iHeadLevel = Val(Mid(sParStyle, 8)) + 1
+            If iHeadLevel > 9 Then iHeadLevel = 9
+            p.Style = "Heading " & iHeadLevel
+        End If
+    Next p
+End Sub
+
+
+
+==============================================
+EXCEL
+==============================================
+Remove empty lines
+==================================
+
+Sub DelEmptyRows() 'Удаление пустых строк на активном листе
+
+Dim i As Long
+
+Dim rMay1 As Range
+
+Dim rMay2 As Range
+
+Set rMay1 = Application.Range(ActiveSheet.Range("A1"), _
+
+ActiveSheet.Cells.SpecialCells(xlCellTypeLastCell))
+
+Application.ScreenUpdating = False
+
+'удаляем пустые строки
+
+For i = 1 To rMay1.Rows.Count
+
+If WorksheetFunction.CountA(rMay1.Rows(i).EntireRow) = 0 Then
+
+If rMay2 Is Nothing Then
+
+Set rMay2 = rMay1.Rows(i).EntireRow
+
+Else
+
+Set rMay2 = Application.Union(rMay2, rMay1.Rows(i).EntireRow)
+
+End If
+
+End If
+
+Next
+
+If rMay2 Is Nothing Then
+
+MsgBox "Пустых строк не найдено.", vbInformation, "Информация"
+
+Else:
+
+rMay2.[Delete]
+
+End If
+
+Application.ScreenUpdating = True
+
+End Sub
+
+==================
+Delete All tables
+==================
+Sub Removetables()
+
+    Dim oTable As Table
+    For Each oTable In ActiveDocument.Tables
+    oTable.Delete
+    Next oTable
+
+End Sub

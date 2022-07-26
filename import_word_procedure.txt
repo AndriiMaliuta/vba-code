@@ -1,0 +1,19 @@
+=====
+WORD
+======
+stop review mode
+delete unnecessary parts
+accept changes
+remove comments
+replace brackets
+remove bookmarks
+import to bass
+replace brackets back
+=======
+BASS:
+=======
+add labels
+run replace for quotes (2)
+relocate pages
+add prefix to pages (if needed)
+remove labels
